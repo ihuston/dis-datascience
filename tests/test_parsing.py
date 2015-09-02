@@ -1,8 +1,21 @@
 from unittest import TestCase
+import pandas as pd
 
 from dis_ds import parsing
 import tempfile
 import os
+
+lines = ['bakerloo',
+         'central',
+         'circle',
+         'district',
+         'hammersmith-city',
+         'jubilee',
+         'metropolitan',
+         'northern',
+         'piccadilly',
+         'victoria',
+         'waterloo-city']
 
 
 class TestStatusSeverities(TestCase):
@@ -70,4 +83,55 @@ class TestStatusSeverities(TestCase):
         for fname in file_names:
             os.unlink(fname)
         return
+
+
+class TestParseFile(TestCase):
+
+    def test_empty_file(self):
+        tempdir = tempfile.gettempdir()
+        filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
+        filepath = os.path.join(tempdir, filename)
+        with open(filepath, "w") as f:
+            f.write('')
+        result = parsing.parse_file(filepath)
+        this_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
+        expected = pd.DataFrame({l: None for l in lines}, index=[this_datetime])
+        self.assertTrue(result.equals(expected))
+        return
+
+    def test_parse_date(self):
+        filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
+        result = parsing.get_datetime_from_filename(filename)
+        expected = pd.datetime(2015, 2, 24, 12, 3, 14)
+
+        self.assertEqual(result, expected)
+        return
+
+    def test_parse_date_from_path(self):
+        filename = '/tmp/tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
+        result = parsing.get_datetime_from_filename(filename)
+        expected = pd.datetime(2015, 2, 24, 12, 3, 14)
+
+        self.assertEqual(result, expected)
+        return
+
+    def test_single_line(self):
+        tempdir = tempfile.gettempdir()
+        filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
+        filepath = os.path.join(tempdir, filename)
+        with open(filepath, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]}]
+            """
+            f.write(disruption)
+        result = parsing.parse_file(filepath)
+        this_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
+        line_values = {l: None for l in lines}
+        line_values['bakerloo'] = 6
+        expected = pd.DataFrame(line_values, index=[this_datetime])
+        self.assertTrue(result.equals(expected))
+        return
+
+    def test_multiple_statuses_for_single_line(self):
+        pass
 
