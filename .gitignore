@@ -3,3 +3,4 @@
 test_data
 README-private.md
 .idea
+__pycache__
