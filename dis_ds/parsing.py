@@ -13,3 +13,13 @@ def get_status_severities(file):
         for status in line:
             severities[status['statusSeverity']] = status['statusSeverityDescription']
     return severities
+
+
+def get_severities_from_files(filenames):
+    severities = {}
+    for file in filenames:
+        result = get_status_severities(file)
+        severities.update(result)
+
+    return severities
+
