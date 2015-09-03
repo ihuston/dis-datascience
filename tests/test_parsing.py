@@ -178,3 +178,65 @@ class TestParseFile(TestCase):
         line_values['circle'] = 10
         assert_frame_equal(result, line_values)
         return
+
+
+class TestParseMultipleFiles(TestCase):
+
+    def setUp(self):
+        tempdir = tempfile.gettempdir()
+        filename1 = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
+        filename2 = 'tfl_api_line_mode_status_tube_2015-02-25_12:00:00.json'
+        self.filepath1 = os.path.join(tempdir, filename1)
+        self.file_datetime1 = pd.datetime(2015, 2, 24, 12, 3, 14)
+        self.filepath2 = os.path.join(tempdir, filename2)
+        self.file_datetime2 = pd.datetime(2015, 2, 25, 12, 0, 0)
+        self.default_lines = pd.DataFrame({l: 6 for l in lines}, index=[self.file_datetime1, self.file_datetime2])
+
+    def tearDown(self):
+        try:
+            os.unlink(self.filepath1)
+            os.unlink(self.filepath2)
+        except FileNotFoundError:
+            pass
+
+    def test_multiple_files(self):
+
+        with open(self.filepath1, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "central", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "circle", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "district", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "hammersmith-city", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "jubilee", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "metropolitan", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "northern", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "piccadilly", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "victoria", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "waterloo-city", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]}]
+            """
+
+            f.write(disruption)
+        with open(self.filepath2, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":10, "statusSeverityDescription":"Good Service"}]},
+             {"id": "central", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "circle", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "district", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "hammersmith-city", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "jubilee", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "metropolitan", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "northern", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "piccadilly", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "victoria", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "waterloo-city", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]}]
+            """
+            f.write(disruption)
+        result = parsing.parse_file_list([self.filepath1, self.filepath2])
+        line_values = self.default_lines
+        line_values.ix[1]['bakerloo'] = 10
+        print('result = {}'.format(result.dtypes))
+        print('line_values = {}'.format(line_values.dtypes))
+        assert_frame_equal(result, line_values)
+
+        return
