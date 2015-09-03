@@ -51,6 +51,6 @@ def parse_file(filepath):
         df = pd.read_json(filepath)
         for index, line in df.iterrows():
             line_id = line['id']
-            severity = line['lineStatuses'][0]['statusSeverity']
-            line_values[line_id] = severity
+            severities = [line_status['statusSeverity'] for line_status in line['lineStatuses']]
+            line_values[line_id] = min(severities)
     return pd.DataFrame(line_values, index=[datetime])

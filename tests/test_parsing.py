@@ -1,5 +1,6 @@
 from unittest import TestCase
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 
 from dis_ds import parsing
 import tempfile
@@ -85,19 +86,7 @@ class TestStatusSeverities(TestCase):
         return
 
 
-class TestParseFile(TestCase):
-
-    def test_empty_file(self):
-        tempdir = tempfile.gettempdir()
-        filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
-        filepath = os.path.join(tempdir, filename)
-        with open(filepath, "w") as f:
-            f.write('')
-        result = parsing.parse_file(filepath)
-        this_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
-        expected = pd.DataFrame({l: None for l in lines}, index=[this_datetime])
-        self.assertTrue(result.equals(expected))
-        return
+class TestDateParsing(TestCase):
 
     def test_parse_date(self):
         filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
@@ -115,23 +104,77 @@ class TestParseFile(TestCase):
         self.assertEqual(result, expected)
         return
 
-    def test_single_line(self):
+
+class TestParseFile(TestCase):
+
+    def setUp(self):
         tempdir = tempfile.gettempdir()
         filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
-        filepath = os.path.join(tempdir, filename)
-        with open(filepath, "w") as f:
+        self.filepath = os.path.join(tempdir, filename)
+        self.file_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
+        self.empty_df = pd.DataFrame({l: None for l in lines}, index=[self.file_datetime])
+
+    def tearDown(self):
+        try:
+            os.unlink(self.filepath)
+        except FileNotFoundError:
+            pass
+
+    def test_empty_file(self):
+        with open(self.filepath, "w") as f:
+            f.write('')
+        result = parsing.parse_file(self.filepath)
+        self.assertTrue(result.equals(self.empty_df))
+        return
+
+    def test_single_line(self):
+        with open(self.filepath, "w") as f:
             disruption = """
             [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]}]
             """
             f.write(disruption)
-        result = parsing.parse_file(filepath)
-        this_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
-        line_values = {l: None for l in lines}
+        result = parsing.parse_file(self.filepath)
+        line_values = self.empty_df
         line_values['bakerloo'] = 6
-        expected = pd.DataFrame(line_values, index=[this_datetime])
-        self.assertTrue(result.equals(expected))
+        assert_frame_equal(result, line_values)
         return
 
     def test_multiple_statuses_for_single_line(self):
-        pass
+        with open(self.filepath, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"},
+                                                {"statusSeverity":10, "statusSeverityDescription":"Good Service"}]}]
+            """
+            f.write(disruption)
+        result = parsing.parse_file(self.filepath)
+        line_values = self.empty_df
+        line_values['bakerloo'] = 6
+        assert_frame_equal(result, line_values)
+        return
 
+    def test_multiple_statuses_reverse_order(self):
+        with open(self.filepath, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":10, "statusSeverityDescription":"Good Service"},
+                                                {"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]}]
+            """
+            f.write(disruption)
+        result = parsing.parse_file(self.filepath)
+        line_values = self.empty_df
+        line_values['bakerloo'] = 6
+        assert_frame_equal(result, line_values)
+        return
+
+    def test_multiple_lines(self):
+        with open(self.filepath, "w") as f:
+            disruption = """
+            [{"id": "bakerloo", "lineStatuses":[{"statusSeverity":6, "statusSeverityDescription":"Severe Delays"}]},
+             {"id": "circle", "lineStatuses":[{"statusSeverity":10, "statusSeverityDescription":"Good Service"}]}]
+            """
+            f.write(disruption)
+        result = parsing.parse_file(self.filepath)
+        line_values = self.empty_df
+        line_values['bakerloo'] = 6
+        line_values['circle'] = 10
+        assert_frame_equal(result, line_values)
+        return
