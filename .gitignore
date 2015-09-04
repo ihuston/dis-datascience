@@ -4,3 +4,4 @@ test_data
 README-private.md
 .idea
 __pycache__
+.aws-credentials
