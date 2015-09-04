@@ -53,7 +53,7 @@ def parse_file(filepath):
             line_id = line['id']
             severities = [line_status['statusSeverity'] for line_status in line['lineStatuses']]
             line_values[line_id] = min(severities)
-    return pd.DataFrame(line_values, index=[datetime])
+    return pd.DataFrame(line_values, index=[datetime]).astype(float)
 
 
 def parse_file_list(file_list):

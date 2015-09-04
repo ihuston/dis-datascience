@@ -112,7 +112,7 @@ class TestParseFile(TestCase):
         filename = 'tfl_api_line_mode_status_tube_2015-02-24_12:03:14.json'
         self.filepath = os.path.join(tempdir, filename)
         self.file_datetime = pd.datetime(2015, 2, 24, 12, 3, 14)
-        self.empty_df = pd.DataFrame({l: None for l in lines}, index=[self.file_datetime])
+        self.empty_df = pd.DataFrame({l: None for l in lines}, index=[self.file_datetime]).astype(float)
 
     def tearDown(self):
         try:
@@ -135,7 +135,7 @@ class TestParseFile(TestCase):
             f.write(disruption)
         result = parsing.parse_file(self.filepath)
         line_values = self.empty_df
-        line_values['bakerloo'] = 6
+        line_values['bakerloo'] = 6.0
         assert_frame_equal(result, line_values)
         return
 
@@ -148,7 +148,7 @@ class TestParseFile(TestCase):
             f.write(disruption)
         result = parsing.parse_file(self.filepath)
         line_values = self.empty_df
-        line_values['bakerloo'] = 6
+        line_values['bakerloo'] = 6.0
         assert_frame_equal(result, line_values)
         return
 
@@ -161,7 +161,7 @@ class TestParseFile(TestCase):
             f.write(disruption)
         result = parsing.parse_file(self.filepath)
         line_values = self.empty_df
-        line_values['bakerloo'] = 6
+        line_values['bakerloo'] = 6.0
         assert_frame_equal(result, line_values)
         return
 
@@ -174,8 +174,8 @@ class TestParseFile(TestCase):
             f.write(disruption)
         result = parsing.parse_file(self.filepath)
         line_values = self.empty_df
-        line_values['bakerloo'] = 6
-        line_values['circle'] = 10
+        line_values['bakerloo'] = 6.0
+        line_values['circle'] = 10.0
         assert_frame_equal(result, line_values)
         return
 
@@ -190,7 +190,7 @@ class TestParseMultipleFiles(TestCase):
         self.file_datetime1 = pd.datetime(2015, 2, 24, 12, 3, 14)
         self.filepath2 = os.path.join(tempdir, filename2)
         self.file_datetime2 = pd.datetime(2015, 2, 25, 12, 0, 0)
-        self.default_lines = pd.DataFrame({l: 6 for l in lines}, index=[self.file_datetime1, self.file_datetime2])
+        self.default_lines = pd.DataFrame({l: 6 for l in lines}, index=[self.file_datetime1, self.file_datetime2]).astype(float)
 
     def tearDown(self):
         try:
