@@ -2,6 +2,7 @@
 #
 import os
 import datetime
+import boto
 import pandas as pd
 
 lines = ['bakerloo',
@@ -47,8 +48,12 @@ def get_datetime_from_filename(filepath):
 def parse_file(filepath):
     datetime = get_datetime_from_filename(filepath)
     line_values = {l: None for l in lines}
-    if os.stat(filepath).st_size != 0:
+    try:
         df = pd.read_json(filepath)
+    except (IOError, ValueError, boto.exception.S3ResponseError):
+        # TODO Add logging of errors
+        pass
+    else:
         for index, line in df.iterrows():
             line_id = line['id']
             severities = [line_status['statusSeverity'] for line_status in line['lineStatuses']]

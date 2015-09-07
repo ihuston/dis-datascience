@@ -240,3 +240,22 @@ class TestParseMultipleFiles(TestCase):
         assert_frame_equal(result, line_values)
 
         return
+
+
+class TestAWSParsing(TestCase):
+
+    testfile = 's3://pivotal-london-dis/tfl_api_line_mode_status_tube_2015-02-24_11:51:45.json'
+
+    def test_aws_connectivity(self):
+        newfile = pd.read_json(self.testfile)
+        assert newfile is not None
+
+    def test_aws_parsing(self):
+        parsed = parsing.parse_file(self.testfile)
+        self.assertTrue(len(parsed.columns), 11)
+
+    def test_missing_file(self):
+        file_datetime = pd.datetime(2010, 2, 24, 11, 51, 45)
+        empty_df = pd.DataFrame({l: None for l in lines}, index=[file_datetime]).astype(float)
+        parsed = parsing.parse_file('s3://pivotal-london-dis/tfl_api_line_mode_status_tube_2010-02-24_11:51:45.json')
+        assert_frame_equal(parsed, empty_df)
