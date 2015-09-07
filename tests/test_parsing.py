@@ -1,4 +1,5 @@
 from unittest import TestCase
+import boto
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
@@ -259,3 +260,22 @@ class TestAWSParsing(TestCase):
         empty_df = pd.DataFrame({l: None for l in lines}, index=[file_datetime]).astype(float)
         parsed = parsing.parse_file('s3://pivotal-london-dis/tfl_api_line_mode_status_tube_2010-02-24_11:51:45.json')
         assert_frame_equal(parsed, empty_df)
+
+    def test_date_parsing(self):
+        # Get boto key object
+        c = boto.connect_s3()
+        b = c.get_bucket('pivotal-london-dis')
+        _, filename = os.path.split(self.testfile)
+        single_key = list(b.list(prefix=filename))[0]
+        result = parsing.get_datetime_from_filename(single_key)
+        expected = pd.datetime(2015, 2, 24, 11, 51, 45)
+
+        self.assertEqual(result, expected)
+
+    def test_multiple_files_from_s3(self):
+        file_prefix = os.path.split(self.testfile)[1][:-9]
+        result = parsing.parse_s3_files(file_prefix)
+        self.assertEqual(len(result), 6)
+
+
+

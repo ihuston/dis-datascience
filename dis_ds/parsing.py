@@ -40,7 +40,9 @@ def get_severities_from_files(filenames):
 
 
 def get_datetime_from_filename(filepath):
-    _, filename = os.path.split(filepath)
+    filename = getattr(filepath, 'key', None)
+    if filename is None:
+        filename = os.path.split(filepath)[1]
     dt = datetime.datetime.strptime(filename, 'tfl_api_line_mode_status_tube_%Y-%m-%d_%H:%M:%S.json')
     return dt
 
@@ -65,3 +67,11 @@ def parse_file_list(file_list):
     result_list = [parse_file(file) for file in file_list]
     result_df = pd.concat(result_list)
     return result_df
+
+
+def parse_s3_files(file_prefix):
+    c = boto.connect_s3()
+    b = c.get_bucket('pivotal-london-dis')
+    key_list = b.list(prefix=file_prefix)
+    return parse_file_list(key_list)
+
